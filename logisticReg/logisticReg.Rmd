@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Logistic regression"
 output: github_document
 ---
 
@@ -21,7 +21,11 @@ Notice that you get an error requiring the Y values to be between zero and one
 We reset classes from character type to factor
 ```{r}
 str(bc_data)
+```
+
+```{r}
 bc_data$classes <- as.factor(bc_data$classes)
+str(bc_data)
 ```
 Refit the model
 ```{r}
@@ -160,13 +164,15 @@ names(logit_cv)
 There are many parameters that are stored in the training object. 
 
 ```{r}
-logit_cv$results
 logit_cv$finalModel
 ```
 The finalModel is a model object, in this case, the object returned from glm(). This final model, is fit to all of the supplied training data. This model object is often used when we call certain relevant functions on the object returned by train(), such as summary()
 
 ```{r}
 summary(logit_cv$finalModel)
+```
+
+```{r}
 summary(glm(classes~., data= train_data, family = "binomial"))
 ```
 
@@ -199,7 +205,6 @@ rowSums(predictions)
 head(predictions)
 ```
 
-What do you notice between the accuracy measures on the test set versus the training set?
 
 ```{r}
 results <- data.frame(actual = test_data$classes,
