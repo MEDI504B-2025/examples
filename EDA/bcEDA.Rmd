@@ -99,6 +99,7 @@ No! We want to filter out unique patients
 
 ```{r}
 bc_data2 <- bc_data1 %>% distinct(sample_code_number,.keep_all = TRUE)
+length(unique(bc_data2$sample_code_number))
 ```
 
 We also don't really care about sample code number, as it is not a biological variable. Therefore, can remove. 

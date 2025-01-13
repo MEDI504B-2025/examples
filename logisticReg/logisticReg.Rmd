@@ -1,0 +1,217 @@
+---
+title: "R Notebook"
+output: github_document
+---
+
+# Read clean data
+
+```{r}
+library(tidyverse)
+bc_data <- readRDS("../EDA/bc_clean.RDS")
+str(bc_data)
+#model_logit <-  glm(classes~., data= bc_data, family = "binomial")
+```
+
+Notice that you get an error requiring the Y values to be between zero and one
+
+```{r}
+?glm
+```
+
+We reset classes from character type to factor
+```{r}
+str(bc_data)
+bc_data$classes <- as.factor(bc_data$classes)
+```
+Refit the model
+```{r}
+model_logit <-  glm(classes~., data= bc_data, family = binomial)
+summary(model_logit)
+confint(model_logit)
+```
+Notice that these are on the log odds scale.
+
+# Publication ready results
+```{r}
+fit.apparent <- Publish::publish(model_logit, digits=1)$regressionTable
+```
+
+# Assessing the model's accuracy
+# Apparent accuracy----
+
+```{r}
+pred_class <- predict(model_logit, bc_data, type = "response")
+
+fitted_mod <- fitted(model_logit)
+plot(pred_class, fitted_mod)
+abline(0,1, col="red")
+```
+
+Fitted values are the same as predicted values using the training data
+
+```{r}
+ggplot(data.frame(y_linear = pred_class), aes(pred_class)) +
+  geom_density() +
+  ggtitle("Probabilities predicted by linear model of binary default")+
+  xlab("Predicted class")
+```
+
+```{r}
+pred_class <- ifelse(pred_class>0.5,1,0) %>% factor(labels = c("benign","malignant"))
+table(pred_class)
+```
+# ROC Plots
+
+```{r}
+library(caret)
+library(pROC)
+library(plotROC)
+
+caret:: confusionMatrix(pred_class, bc_data$classes, positive ="malignant")
+?caret::confusionMatrix
+```
+
+```{r}
+roc_mfit <- roc(bc_data$classes, as.numeric(pred_class))
+?roc
+```
+
+The first argument is the observed response, the second argument is the predicted response. Be careful this is not a norm and you have to check for every function.
+
+```{r}
+plot(roc_mfit, col = "red", print.auc = T)
+```
+# Resampling
+
+```{r}
+set.seed(2025)
+index <- caret::createDataPartition(bc_data$classes, p = 0.7, list = FALSE)
+```
+
+By default, createDataPartition does a stratified random split of the data.
+
+```{r}
+train_data <- bc_data[index, ]
+test_data  <- bc_data[-index, ]
+
+bind_rows(data.frame(group = "train", train_data),
+          data.frame(group = "test", test_data)) %>%
+  gather(x, y, clump_thickness:mitosis) %>%
+  ggplot(aes(x = y, color = group, fill = group)) +
+  geom_density(alpha = 0.3) +
+  facet_wrap( ~ x, scales = "free", ncol = 3)
+```
+Can see that the training set and the test said are pretty similar in terms of covariates
+
+```{r}
+set.seed(2025)
+
+logit_cv <- caret::train(classes ~ .,
+                         data = train_data,
+                         method = "glm",
+                         family = "binomial",
+                         preProcess = c("scale", "center"),
+                         ## Center and scale the predictors for the training
+                         ## set and all future samples.
+                         trControl = trainControl(method = 'none')
+)
+
+summary(logit_cv)
+```
+```{r}
+trControl_params = trainControl(method = "repeatedcv", 
+                         number = 5, 
+                         repeats = 3, 
+                         savePredictions = TRUE, 
+                         summaryFunction = twoClassSummary,
+                         verboseIter = FALSE)
+
+?trainControl
+```
+
+Method specifies how resampling will be done. Examples include cv, boot, LOOCV, repeatedcv, and oob.
+
+Number specifies the number of times resampling should be done for methods that require resample, such as, cv and boot.
+
+Repeats specifies the number of times to repeat resampling for methods such as repeatedcv
+
+```{r}
+logit_cv <- caret::train(classes ~ .,
+                         data = train_data,
+                         method = "glm",
+                         family = "binomial",
+                         preProcess = c("scale", "center"),
+                         ## Center and scale the predictors for the training
+                         ## set and all future samples.
+                         trControl = trainControl(method = "repeatedcv", 
+                                                  number = 5, 
+                                                  repeats = 3, 
+                                                  savePredictions = TRUE)
+)
+
+
+logit_cv
+```
+We used 441 samples that had binary class benign malignant used tenfold cross validation repeated 10 times. It also provides the cross-validated results accuracy, and Kappa.
+
+```{r}
+names(logit_cv)
+```
+There are many parameters that are stored in the training object. 
+
+```{r}
+logit_cv$results
+logit_cv$finalModel
+```
+The finalModel is a model object, in this case, the object returned from glm(). This final model, is fit to all of the supplied training data. This model object is often used when we call certain relevant functions on the object returned by train(), such as summary()
+
+```{r}
+summary(logit_cv$finalModel)
+summary(glm(classes~., data= train_data, family = "binomial"))
+```
+
+To predict new samples, predict can be used. For classification models, the default behavior is to calculate the predicted class. The option type = "prob" can be used to compute class probabilities from the model. For example:
+
+```{r}
+predictions <- predict(logit_cv, newdata = test_data)
+str(predictions)
+```
+
+These predictions are made on the held out data set
+```{r}
+caret::confusionMatrix(predictions, test_data$classes)
+```
+First predictions then the reference
+
+```{r}
+?caret::confusionMatrix
+caret::confusionMatrix(predictions, test_data$classes, positive = "malignant")
+```
+```{r}
+predictions <- predict(logit_cv, newdata = test_data, type="prob")
+str(predictions)
+```
+
+```{r}
+rowSums(predictions)
+```
+```{r}
+head(predictions)
+```
+
+What do you notice between the accuracy measures on the test set versus the training set?
+
+```{r}
+results <- data.frame(actual = test_data$classes,
+                      predict(logit_cv, test_data, type = "prob"))
+
+results$prediction <- ifelse(results$benign > 0.95, "benign",
+                             ifelse(results$malignant > 0.95, "malignant", NA))
+
+results$correct <- ifelse(results$actual == results$prediction, TRUE, FALSE)
+```
+
+```{r}
+ggplot(results, aes(x = prediction, fill = correct)) +
+  geom_bar(position = "dodge")
+```
