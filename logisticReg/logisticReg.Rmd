@@ -9,7 +9,7 @@ output: github_document
 library(tidyverse)
 bc_data <- readRDS("../EDA/bc_clean.RDS")
 str(bc_data)
-#model_logit <-  glm(classes~., data= bc_data, family = "binomial")
+model_logit <-  glm(classes~., data= bc_data, family = "binomial")
 ```
 
 Notice that you get an error requiring the Y values to be between zero and one
