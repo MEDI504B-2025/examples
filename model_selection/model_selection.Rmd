@@ -1,5 +1,5 @@
 ---
-title: "Model Selection"
+title: "Feature Selection"
 output: github_document
 ---
 
@@ -41,8 +41,11 @@ Try doing backward selection using AIC first, then using BIC. Do you get the sam
 ```{r}
 M0 = glm(classes ~ 1, data = train_data, family = binomial)  # Null model
 M1 = glm(classes ~ ., data = train_data, family= binomial)  # Full model
+
 step.back.aic <- stats::step(M1, direction = "backward", trace = F, k = 2)
-step.back.bic <-  stats::step(M1, direction = "backward", trace = F, k = log(dim(train_data)[1]))
+step.back.bic <-  stats::step(M1, direction = "backward", trace = F, k = 
+                                log(dim(train_data)[1]))
+
 summary(step.back.aic)
 summary(step.back.bic)
 ```
@@ -72,7 +75,6 @@ res.bestglm <-bestglm::bestglm(Xy = x_tr,
 
 ```{r}
 res.bestglm$BestModels
-
 summary(res.bestglm$BestModel)
 ```
 
