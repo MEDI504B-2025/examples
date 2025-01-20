@@ -1,6 +1,6 @@
 ---
 title: "Model Selection"
-output: html_notebook
+output: github_document
 ---
 
 # Import libraries
