@@ -1,5 +1,5 @@
 ---
-title: "Logistic regression"
+title: "Missing data, imputation, and class imbalance"
 output: github_document
 ---
 
@@ -89,7 +89,7 @@ cor(train$bare_nuclei,train$clump_thickness, use = "pairwise.complete.obs")
 
 # Listwise deletion: Remove  the rows where missing values occur. 
 ```{r}
-listwise <- train[complete.cases(train),]
+listwise <- train[complete.cases(train), ]
 sapply(listwise, function(x) sum(is.na(x)))
 dim(listwise)
 mean(listwise$bare_nuclei)
