@@ -76,154 +76,36 @@ the same result?
 ``` r
 M0 = glm(classes ~ 1, data = train_data, family = binomial)  # Null model
 M1 = glm(classes ~ ., data = train_data, family= binomial)  # Full model
-step.back.aic <- stats::step(M1, direction = "backward", trace = TRUE, k = 2)
+step.back.aic <- stats::step(M1, direction = "backward", trace = F, k = 2)
+step.back.bic <-  stats::step(M1, direction = "backward", trace = F, k = log(dim(train_data)[1]))
+summary(step.back.aic)
 ```
 
-    ## Start:  AIC=75.44
-    ## classes ~ clump_thickness + uniformity_of_cell_size + uniformity_of_cell_shape + 
-    ##     marginal_adhesion + single_epithelial_cell_size + bare_nuclei + 
-    ##     bland_chromatin + normal_nucleoli + mitosis
     ## 
-    ##                               Df Deviance    AIC
-    ## - uniformity_of_cell_shape     1   55.442 73.442
-    ## - uniformity_of_cell_size      1   55.667 73.667
-    ## - single_epithelial_cell_size  1   57.240 75.240
-    ## <none>                             55.436 75.436
-    ## - mitosis                      1   60.791 78.791
-    ## - marginal_adhesion            1   61.125 79.125
-    ## - bland_chromatin              1   61.600 79.600
-    ## - normal_nucleoli              1   62.002 80.002
-    ## - clump_thickness              1   72.931 90.931
-    ## - bare_nuclei                  1   79.299 97.299
+    ## Call:
+    ## glm(formula = classes ~ clump_thickness + marginal_adhesion + 
+    ##     bare_nuclei + bland_chromatin + normal_nucleoli + mitosis, 
+    ##     family = binomial, data = train_data)
     ## 
-    ## Step:  AIC=73.44
-    ## classes ~ clump_thickness + uniformity_of_cell_size + marginal_adhesion + 
-    ##     single_epithelial_cell_size + bare_nuclei + bland_chromatin + 
-    ##     normal_nucleoli + mitosis
+    ## Coefficients:
+    ##                   Estimate Std. Error z value Pr(>|z|)    
+    ## (Intercept)       -12.1585     1.8981  -6.406 1.50e-10 ***
+    ## clump_thickness     0.7900     0.1926   4.102 4.09e-05 ***
+    ## marginal_adhesion   0.3478     0.1509   2.305  0.02117 *  
+    ## bare_nuclei         0.5846     0.1351   4.328 1.50e-05 ***
+    ## bland_chromatin     0.5789     0.1892   3.060  0.00222 ** 
+    ## normal_nucleoli     0.3746     0.1385   2.705  0.00683 ** 
+    ## mitosis             0.9787     0.3777   2.591  0.00957 ** 
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ##                               Df Deviance    AIC
-    ## - uniformity_of_cell_size      1   56.143 72.143
-    ## - single_epithelial_cell_size  1   57.246 73.246
-    ## <none>                             55.442 73.442
-    ## - mitosis                      1   60.791 76.791
-    ## - marginal_adhesion            1   61.143 77.143
-    ## - bland_chromatin              1   61.683 77.683
-    ## - normal_nucleoli              1   62.542 78.542
-    ## - clump_thickness              1   74.398 90.398
-    ## - bare_nuclei                  1   80.566 96.566
+    ## (Dispersion parameter for binomial family taken to be 1)
     ## 
-    ## Step:  AIC=72.14
-    ## classes ~ clump_thickness + marginal_adhesion + single_epithelial_cell_size + 
-    ##     bare_nuclei + bland_chromatin + normal_nucleoli + mitosis
+    ##     Null deviance: 578.843  on 440  degrees of freedom
+    ## Residual deviance:  57.727  on 434  degrees of freedom
+    ## AIC: 71.727
     ## 
-    ##                               Df Deviance     AIC
-    ## - single_epithelial_cell_size  1   57.727  71.727
-    ## <none>                             56.143  72.143
-    ## - mitosis                      1   62.567  76.567
-    ## - marginal_adhesion            1   63.425  77.425
-    ## - normal_nucleoli              1   66.331  80.331
-    ## - bland_chromatin              1   68.125  82.125
-    ## - bare_nuclei                  1   87.151 101.151
-    ## - clump_thickness              1   88.143 102.143
-    ## 
-    ## Step:  AIC=71.73
-    ## classes ~ clump_thickness + marginal_adhesion + bare_nuclei + 
-    ##     bland_chromatin + normal_nucleoli + mitosis
-    ## 
-    ##                     Df Deviance     AIC
-    ## <none>                   57.727  71.727
-    ## - marginal_adhesion  1   63.550  75.550
-    ## - mitosis            1   63.753  75.753
-    ## - normal_nucleoli    1   66.357  78.357
-    ## - bland_chromatin    1   68.223  80.223
-    ## - bare_nuclei        1   87.314  99.314
-    ## - clump_thickness    1   88.197 100.197
-
-``` r
-step.back.bic <-  stats::step(M1, direction = "backward", trace = TRUE, k = log(dim(train_data)[1]))
-```
-
-    ## Start:  AIC=116.33
-    ## classes ~ clump_thickness + uniformity_of_cell_size + uniformity_of_cell_shape + 
-    ##     marginal_adhesion + single_epithelial_cell_size + bare_nuclei + 
-    ##     bland_chromatin + normal_nucleoli + mitosis
-    ## 
-    ##                               Df Deviance    AIC
-    ## - uniformity_of_cell_shape     1   55.442 110.24
-    ## - uniformity_of_cell_size      1   55.667 110.47
-    ## - single_epithelial_cell_size  1   57.240 112.04
-    ## - mitosis                      1   60.791 115.59
-    ## - marginal_adhesion            1   61.125 115.93
-    ## <none>                             55.436 116.33
-    ## - bland_chromatin              1   61.600 116.40
-    ## - normal_nucleoli              1   62.002 116.80
-    ## - clump_thickness              1   72.931 127.73
-    ## - bare_nuclei                  1   79.299 134.10
-    ## 
-    ## Step:  AIC=110.24
-    ## classes ~ clump_thickness + uniformity_of_cell_size + marginal_adhesion + 
-    ##     single_epithelial_cell_size + bare_nuclei + bland_chromatin + 
-    ##     normal_nucleoli + mitosis
-    ## 
-    ##                               Df Deviance    AIC
-    ## - uniformity_of_cell_size      1   56.143 104.86
-    ## - single_epithelial_cell_size  1   57.246 105.96
-    ## - mitosis                      1   60.791 109.50
-    ## - marginal_adhesion            1   61.143 109.86
-    ## <none>                             55.442 110.24
-    ## - bland_chromatin              1   61.683 110.39
-    ## - normal_nucleoli              1   62.542 111.25
-    ## - clump_thickness              1   74.398 123.11
-    ## - bare_nuclei                  1   80.566 129.28
-    ## 
-    ## Step:  AIC=104.86
-    ## classes ~ clump_thickness + marginal_adhesion + single_epithelial_cell_size + 
-    ##     bare_nuclei + bland_chromatin + normal_nucleoli + mitosis
-    ## 
-    ##                               Df Deviance    AIC
-    ## - single_epithelial_cell_size  1   57.727 100.35
-    ## <none>                             56.143 104.86
-    ## - mitosis                      1   62.567 105.19
-    ## - marginal_adhesion            1   63.425 106.05
-    ## - normal_nucleoli              1   66.331 108.95
-    ## - bland_chromatin              1   68.125 110.75
-    ## - bare_nuclei                  1   87.151 129.78
-    ## - clump_thickness              1   88.143 130.77
-    ## 
-    ## Step:  AIC=100.35
-    ## classes ~ clump_thickness + marginal_adhesion + bare_nuclei + 
-    ##     bland_chromatin + normal_nucleoli + mitosis
-    ## 
-    ##                     Df Deviance    AIC
-    ## - marginal_adhesion  1   63.550 100.08
-    ## - mitosis            1   63.753 100.29
-    ## <none>                   57.727 100.35
-    ## - normal_nucleoli    1   66.357 102.89
-    ## - bland_chromatin    1   68.223 104.76
-    ## - bare_nuclei        1   87.314 123.85
-    ## - clump_thickness    1   88.197 124.73
-    ## 
-    ## Step:  AIC=100.08
-    ## classes ~ clump_thickness + bare_nuclei + bland_chromatin + normal_nucleoli + 
-    ##     mitosis
-    ## 
-    ##                   Df Deviance     AIC
-    ## - mitosis          1   69.020  99.465
-    ## <none>                 63.550 100.084
-    ## - normal_nucleoli  1   74.408 104.854
-    ## - bland_chromatin  1   75.795 106.240
-    ## - clump_thickness  1   96.145 126.590
-    ## - bare_nuclei      1  104.428 134.873
-    ## 
-    ## Step:  AIC=99.47
-    ## classes ~ clump_thickness + bare_nuclei + bland_chromatin + normal_nucleoli
-    ## 
-    ##                   Df Deviance     AIC
-    ## <none>                 69.020  99.465
-    ## - bland_chromatin  1   80.582 104.938
-    ## - normal_nucleoli  1   81.029 105.385
-    ## - bare_nuclei      1  111.158 135.514
-    ## - clump_thickness  1  118.996 143.352
+    ## Number of Fisher Scoring iterations: 9
 
 ``` r
 summary(step.back.bic)
@@ -412,11 +294,6 @@ caret_full <- train(classes~.,
                    preProc = c("center", "scale"),
                    metric = "ROC",
                    trace = 0)
-```
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-``` r
 full <- eval_mod(caret_full, test_data)
 ```
 
@@ -433,29 +310,6 @@ caret_fwd <- train(classes~.,
                              preProc = c("center", "scale"),
                              metric = "ROC",
                              trace = 0)
-```
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-``` r
 fwd <- eval_mod(caret_fwd, test_data)
 ```
 
@@ -472,39 +326,8 @@ caret_back <- train(classes~.,
                    preProc = c("center", "scale"),
                    metric = "ROC",
                    trace = 0)
-```
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-``` r
 back <- eval_mod(caret_back, test_data)
 ```
-
-    ## Setting levels: control = benign, case = malignant
-
-    ## Setting direction: controls < cases
 
 ``` r
 ?MASS::stepAIC
@@ -520,117 +343,6 @@ caret_both <- train(classes~.,
                     preProc = c("center", "scale"),
                     metric = "ROC",
                     trace = 0)
-```
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-    ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-
-``` r
 both <- eval_mod(caret_both, test_data)
 ```
 

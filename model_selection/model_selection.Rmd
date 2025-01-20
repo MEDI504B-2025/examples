@@ -41,8 +41,9 @@ Try doing backward selection using AIC first, then using BIC. Do you get the sam
 ```{r}
 M0 = glm(classes ~ 1, data = train_data, family = binomial)  # Null model
 M1 = glm(classes ~ ., data = train_data, family= binomial)  # Full model
-step.back.aic <- stats::step(M1, direction = "backward", trace = TRUE, k = 2)
-step.back.bic <-  stats::step(M1, direction = "backward", trace = TRUE, k = log(dim(train_data)[1]))
+step.back.aic <- stats::step(M1, direction = "backward", trace = F, k = 2)
+step.back.bic <-  stats::step(M1, direction = "backward", trace = F, k = log(dim(train_data)[1]))
+summary(step.back.aic)
 summary(step.back.bic)
 ```
 
@@ -90,7 +91,7 @@ cctrl <- trainControl(method = "repeatedcv",
 )
 ```
 
-```{r}
+```{r warning=FALSE}
 set.seed(849)
 caret_full <- train(classes~.,
                    data = train_data,
@@ -103,7 +104,7 @@ caret_full <- train(classes~.,
 full <- eval_mod(caret_full, test_data)
 ```
 
-```{r}
+```{r warning=FALSE}
 caret_fwd <- train(classes~.,
                              data = train_data,
                              method = "glmStepAIC", 
@@ -115,7 +116,7 @@ caret_fwd <- train(classes~.,
 fwd <- eval_mod(caret_fwd, test_data)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 caret_back <- train(classes~.,
                    data = train_data,
                    method = "glmStepAIC", 
@@ -132,7 +133,7 @@ back <- eval_mod(caret_back, test_data)
 ?stats::step
 ```
 
-```{r}
+```{r warning=FALSE}
 caret_both <- train(classes~.,
                     data = train_data,
                     method = "glmStepAIC", 
