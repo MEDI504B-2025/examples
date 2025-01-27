@@ -1,0 +1,174 @@
+---
+title: "Trees and forests"
+output: github_document
+---
+
+# import libraries
+
+```{r}
+library(tidyverse)
+library(caret)
+library(pROC)
+```
+
+Build custom AUC function to extract AUC from the caret model object
+
+```{r}
+eval_mod <- function(model, data) {
+  pred <- predict(model, data)
+  cm <- caret::confusionMatrix(pred, data$classes, positive="malignant")
+  auc <- roc(data$classes,
+             predict(model, data, type = "prob")[, "malignant"]) %>% auc()
+  result <- c(cm$overall["Accuracy"],cm$byClass['Sensitivity'], cm$byClass['Specificity'], cm$byClass['F1'],AUC=auc)
+  return(result)
+}
+```
+
+
+# Read clean data 
+
+```{r}
+bc_data <- readRDS("../EDA/bc_clean.RDS")
+bc_data$classes <- as.factor(bc_data$classes)
+```
+
+```{r}
+set.seed(2024)
+index <- caret::createDataPartition(bc_data$classes, p = 0.7, list = FALSE)
+
+train_data <- bc_data[index, ]
+test_data  <- bc_data[-index, ]
+```
+
+```{r}
+train_data$classes %>% table(.)
+set.seed(2024)
+library(rpart)
+tree_mod <- rpart(
+  formula = classes ~. ,
+  data    = train_data,
+  method  = "class"
+)
+tree_mod
+```
+
+```{r}
+library(rpart.plot)
+rpart.plot(tree_mod)
+```
+
+# Pruning
+We prune the tree using the cost complexity criterion. Can a less deep tree give comparable results. If so, go with the shallower tree to reduce the likelihood of overfitting. We used the a parameter called complexity parameter (CP)
+
+```{r}
+printcp(tree_mod)
+```
+
+It computes the cross validation error for each value of cp CP=0.01 gives the lowest error
+
+```{r}
+opt <- which.min(tree_mod$cptable[,"xerror"])
+```
+
+get its value
+
+```{r}
+cp <- tree_mod$cptable[opt, "CP"]
+cp
+```
+
+We can prune the tree based on this CP
+```{r}
+pruned_model <- prune(tree_mod,cp)
+#plot tree
+rpart.plot(pruned_model)
+```
+#Note that rpart will use a default CP value of 0.01 if you don’t specify one in prune.
+
+```{r}
+
+pred <- predict(object = tree_mod,   # model object 
+                newdata = test_data,
+                type="class")  # test dataset
+pruned_tree_metrics <- caret::confusionMatrix(pred,test_data$classes, positive = "malignant")
+pruned_tree_metrics
+```
+
+```{r}
+set.seed(2024)
+caret_tree <- train(
+  classes ~ .,
+  data = train_data,
+  method = "rpart",
+  metric ="ROC",
+  trControl = trainControl(method = "cv", number = 5,
+                           classProbs = T, summaryFunction = twoClassSummary),
+  tuneLength = 20
+)
+ggplot(caret_tree)
+```
+```{r}
+caret_tree$bestTune
+rpart.plot(caret_tree$finalModel)
+```
+```{r}
+tree <- eval_mod(caret_tree,test_data)
+tree
+```
+```{r}
+tree_bag1 <- ipred::bagging(
+formula = classes ~ .,
+data = train_data,
+nbagg = 500,  
+coob = TRUE
+)
+tree_bag1
+```
+```{r}
+set.seed(2024)
+caret_bag <- train(
+  classes ~ .,
+  data = train_data,
+  method = "treebag",
+  trControl = trainControl(method = "cv", number = 5,
+                           classProbs = T, summaryFunction = twoClassSummary),
+  metric ="ROC",
+  nbagg = 20,  
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+caret_bag
+
+bag <- eval_mod(caret_bag,test_data)
+rbind(tree, bag)
+```
+
+# Random Forest
+
+```{r}
+library(randomForest)
+# Train a Random Forest
+set.seed(2024)  # for reproducibility
+rf_model <- randomForest(formula = classes ~ ., 
+                         data = train_data)
+
+# Print the model output                             
+print(rf_model)
+```
+```{r}
+caret_rf <- train(
+  classes ~ .,
+  data = train_data,                         
+  method = "ranger",
+  metric = "ROC",
+  trControl = trainControl(method = "cv", number = 5, classProbs = TRUE, summaryFunction = twoClassSummary),
+  importance="impurity"
+)
+
+forest <- eval_mod(caret_rf,test_data)
+
+roc_tree <- roc(test_data$classes,
+             predict(pruned_model, test_data, type = "prob")[, "malignant"]) %>% auc()
+pruned_tree <- c(pruned_tree_metrics$overall['Accuracy'], pruned_tree_metrics$byClass['Sensitivity'],
+                 pruned_tree_metrics$byClass['Specificity'], pruned_tree_metrics$byClass['F1'],  "AUC" = roc_tree)
+rbind(pruned_tree, tree, bag, forest)
+```

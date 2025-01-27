@@ -1,6 +1,6 @@
 ---
 title: "Regularization"
-output: html_notebook
+output: github_document
 ---
 
 Read in libraries
