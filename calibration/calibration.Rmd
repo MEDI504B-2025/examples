@@ -1,0 +1,96 @@
+---
+title: "Calibration"
+output: html_notebook
+---
+
+Import libraries 
+```{r}
+library(tidyverse)
+library(caret)
+library(pROC)
+
+# Build custom AUC function to extract AUC
+# from the caret model object
+eval_mod <- function(model, data) {
+  pred <- predict(model, data)
+  cm <- caret::confusionMatrix(pred, data$classes, positive="malignant")
+  auc <- roc(data$classes,
+             predict(model, data, type = "prob")[, "malignant"]) %>% auc()
+  result <- c(cm$overall["Accuracy"],cm$byClass['Sensitivity'], cm$byClass['Specificity'], cm$byClass['F1'],AUC=auc)
+  return(result)
+}
+```
+
+Read in clean data 
+```{r}
+bc_data <- readRDS("../EDA/bc_clean.RDS")
+bc_data$classes <- as.factor(bc_data$classes)
+
+set.seed(2024)
+index <- caret::createDataPartition(bc_data$classes, p = 0.7, list = FALSE)
+
+train_data <- bc_data[index, ]
+test_data  <- bc_data[-index, ]
+
+train_data$classes %>% table(.)
+set.seed(2024)
+```
+
+```{r}
+ctrl <- trainControl(method = "repeatedcv", 
+                     number = 5, 
+                     repeats = 3,  
+                     savePredictions = TRUE,
+                     summaryFunction = twoClassSummary,
+                     classProbs = TRUE)
+set.seed(2024)
+
+forest_fit <- train(
+  classes ~ .,
+  data = train_data,                         
+  method = "ranger",
+  metric = "ROC",
+  trControl = trainControl(method = "cv", number = 5, classProbs = TRUE, summaryFunction = twoClassSummary),
+  importance="impurity"
+)
+forest <- eval_mod(forest_fit,test_data)
+```
+
+```{r}
+pred_test <- data.frame(pred= predict(forest_fit, test_data, type = "prob"), obs = ifelse(test_data$classes=="malignant",1,0)) 
+
+calperf <- CalibrationCurves::val.prob.ci.2(pred_test$pred.malignant, pred_test$obs, logistic.cal = TRUE,  col.log = "orange")
+
+
+calperf <- CalibrationCurves::val.prob.ci.2(pred_test$pred.malignant, pred_test$obs,allowPerfectPredictions=TRUE, cuts = seq(0,1,by=.2))
+
+calperf
+```
+
+#Decision Curve analysis
+```{r}
+?dcurves::dca
+dca_object <- dcurves::dca(obs ~ pred.malignant, data = pred_test)
+dca_object%>%
+  plot(smooth = TRUE)
+
+dcurves::dca(obs ~ pred.malignant, data = pred_test,
+    as_probability = "pred.malignant",
+    thresholds = seq(0.05, 0.35, 0.15)
+) %>%
+  as_tibble() %>%
+  select(label, threshold, net_benefit) %>%
+  gt::gt() %>%
+  gt::fmt_percent(columns = threshold, decimals = 0) %>%
+  gt::fmt(columns = net_benefit, fns = function(x) round(x, digits = 3)) %>%
+  gt::cols_label(
+    label = "Strategy",
+    threshold = "Decision Threshold",
+    net_benefit = "Net Benefit"
+  ) %>%
+  gt::cols_align("left", columns = label)
+
+# More here https://mskcc-epi-bio.github.io/decisioncurveanalysis/dca-tutorial-r.html
+# 
+# 
+```
