@@ -1,0 +1,62 @@
+---
+title: "Deep learning"
+output: github_document
+---
+
+```{r}
+# Read clean data
+library(tidyverse)
+library(caret)
+library(pROC)
+
+# Build custom AUC function to extract AUC
+# from the caret model object
+eval_mod <- function(model, data) {
+  pred <- predict(model, data)
+  cm <- caret::confusionMatrix(pred, data$classes, positive="malignant")
+  auc <- roc(data$classes,
+             predict(model, data, type = "prob")[, "malignant"]) %>% auc()
+  result <- c(cm$overall["Accuracy"],cm$byClass['Sensitivity'], cm$byClass['Specificity'], cm$byClass['F1'],AUC=auc)
+  return(result)
+}
+
+
+bc_data <- readRDS("../EDA/bc_clean.RDS")
+bc_data$classes <- as.factor(bc_data$classes)
+
+set.seed(2024)
+index <- caret::createDataPartition(bc_data$classes, p = 0.7, list = FALSE)
+
+```
+
+```{r}
+y = as.matrix(bc_data[,10])
+y[which(y=="benign")] = 0
+y[which(y=="malignant")] = 1
+y = as.numeric(y)
+x = as.numeric(as.matrix(bc_data[,1:9]))
+x = matrix(as.numeric(x),ncol=9)
+
+y_train <- y[index]
+y_test <- y[-index]
+x_train  <- x[index, ]
+x_test <- x[-index, ]
+```
+
+```{r}
+library(deepnet)
+set.seed(2024)
+
+nn <- nn.train(x_train, y_train, hidden = c(10))
+yy = nn.predict(nn, x_test)
+print(head(yy))
+?nn.train
+```
+
+```{r}
+yhat = matrix(0,length(yy),1)
+yhat[which(yy > mean(yy))] = 1
+yhat[which(yy <= mean(yy))] = 0
+cm = caret::confusionMatrix(factor(yhat),factor(y_test))
+print(cm)
+```

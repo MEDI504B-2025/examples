@@ -54,6 +54,7 @@ forest_fit <- train(
   importance="impurity"
 )
 forest <- eval_mod(forest_fit,test_data)
+forest
 ```
 
 ```{r}
